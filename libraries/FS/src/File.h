@@ -20,6 +20,7 @@
 
 #ifndef FS_H
 #define FS_H
+#include <Arduino.h>
 
 extern "C" {
 #include <sys/unistd.h>
@@ -31,7 +32,6 @@ extern "C" {
 #define FILE_WRITE      "w"
 #define FILE_APPEND     "a"
 
-class File;
 
 
 enum SeekMode {
@@ -43,10 +43,6 @@ enum SeekMode {
 class File : public Stream
 {
 public:
-    File(){
-        _timeout = 0;
-    }
-
     size_t write(uint8_t) override;
     size_t write(const uint8_t *buf, size_t size) override;
     int available() override;
@@ -76,49 +72,5 @@ public:
     void rewindDirectory(void);
 };
 
-class FS
-{
-public:
-    FS()
-    {}
-
-    File open(const char* path, const char* mode = FILE_READ);
-    File open(const String& path, const char* mode = FILE_READ);
-
-    bool exists(const char* path);
-    bool exists(const String& path);
-
-    bool remove(const char* path);
-    bool remove(const String& path);
-
-    bool rename(const char* pathFrom, const char* pathTo);
-    bool rename(const String& pathFrom, const String& pathTo);
-
-    bool mkdir(const char *path);
-    bool mkdir(const String &path);
-
-    bool rmdir(const char *path);
-    bool rmdir(const String &path);
-
-        FILE *              _f;
-    DIR *               _d;
-    char *              _path;
-    bool                _isDirectory;
-    mutable struct stat _stat;
-    mutable bool        _written;
-
-    void _getStat() const;
-};
-
-} // namespace fs
-
-#ifndef FS_NO_GLOBALS
-using fs::FS;
-using fs::File;
-using fs::SeekMode;
-using fs::SeekSet;
-using fs::SeekCur;
-using fs::SeekEnd;
-#endif //FS_NO_GLOBALS
 
 #endif //FS_H

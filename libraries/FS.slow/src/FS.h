@@ -21,11 +21,11 @@
 #ifndef FS_H
 #define FS_H
 
-extern "C" {
-#include <sys/unistd.h>
-#include <sys/stat.h>
-#include <dirent.h>
-}
+#include <memory>
+#include <Arduino.h>
+
+namespace fs
+{
 
 #define FILE_READ       "r"
 #define FILE_WRITE      "w"
@@ -33,6 +33,10 @@ extern "C" {
 
 class File;
 
+class FileImpl;
+typedef std::unique_ptr<FileImpl> FileImplPtr;
+class FSImpl;
+typedef std::unique_ptr<FSImpl> FSImplPtr;
 
 enum SeekMode {
     SeekSet = 0,
@@ -43,7 +47,7 @@ enum SeekMode {
 class File : public Stream
 {
 public:
-    File(){
+    File(FileImplPtr p = FileImplPtr()) : _p(p) {
         _timeout = 0;
     }
 
@@ -74,13 +78,15 @@ public:
     boolean isDirectory(void);
     File openNextFile(const char* mode = FILE_READ);
     void rewindDirectory(void);
+
+protected:
+    FileImplPtr _p;
 };
 
 class FS
 {
 public:
-    FS()
-    {}
+    FS(FSImplPtr impl) : _impl(impl) { }
 
     File open(const char* path, const char* mode = FILE_READ);
     File open(const String& path, const char* mode = FILE_READ);
@@ -100,14 +106,9 @@ public:
     bool rmdir(const char *path);
     bool rmdir(const String &path);
 
-        FILE *              _f;
-    DIR *               _d;
-    char *              _path;
-    bool                _isDirectory;
-    mutable struct stat _stat;
-    mutable bool        _written;
 
-    void _getStat() const;
+protected:
+    FSImplPtr _impl;
 };
 
 } // namespace fs

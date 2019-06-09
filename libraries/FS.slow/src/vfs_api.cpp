@@ -41,7 +41,7 @@ FileImplPtr VFSImpl::open(const char* path, const char* mode)
     if(!stat(temp, &st)) {
         free(temp);
         if (S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)) {
-            return std::make_shared<VFSFileImpl>(this, path, mode);
+            return std::make_unique<VFSFileImpl>(this, path, mode);
         }
         log_e("%s has wrong mode 0x%08X", path, st.st_mode);
         return FileImplPtr();
@@ -50,7 +50,7 @@ FileImplPtr VFSImpl::open(const char* path, const char* mode)
     //file not found but mode permits creation
     if(mode && mode[0] != 'r') {
         free(temp);
-        return std::make_shared<VFSFileImpl>(this, path, mode);
+        return std::make_unique<VFSFileImpl>(this, path, mode);
     }
 
     //try to open this as directory (might be mount point)
@@ -58,7 +58,7 @@ FileImplPtr VFSImpl::open(const char* path, const char* mode)
     if(d) {
         closedir(d);
         free(temp);
-        return std::make_shared<VFSFileImpl>(this, path, mode);
+        return std::make_unique<VFSFileImpl>(this, path, mode);
     }
 
     log_e("%s does not exist", temp);
@@ -323,6 +323,9 @@ size_t VFSFileImpl::write(const uint8_t *buf, size_t size)
     }
     _written = true;
     return fwrite(buf, 1, size, _f);
+
+    //return ::write(fileno(_f), buf, 1);
+    
 }
 
 size_t VFSFileImpl::read(uint8_t* buf, size_t size)
@@ -330,7 +333,7 @@ size_t VFSFileImpl::read(uint8_t* buf, size_t size)
     if(_isDirectory || !_f || !buf || !size) {
         return 0;
     }
-
+    //return ::read(fileno(_f), buf, 1);
     return fread(buf, 1, size, _f);
 }
 
@@ -402,7 +405,7 @@ FileImplPtr VFSFileImpl::openNextFile(const char* mode)
     }
     name += fname;
 
-    return std::make_shared<VFSFileImpl>(_fs, name.c_str(), mode);
+    return std::make_unique<VFSFileImpl>(_fs, name.c_str(), mode);
 }
 
 void VFSFileImpl::rewindDirectory(void)
